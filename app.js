@@ -3,13 +3,19 @@ const bodyParser=require("body-parser");
 const mongoose=require("mongoose");
 
 const app=express();
+
+// Middleware for parsing URL-encoded data and serving static files
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static("public"));
 
+// Set the view engine to EJS for rendering html templates
 app.set('view engine', 'ejs');
 
+
+// Connect to MongoDB database 'noteDB' (create it if it doesn't exist)
 mongoose.connect("mongodb://localhost:27017/noteDB");
 
+//schema or structure of the note collection
 const noteSchema = new mongoose.Schema({
     title: {
       type: String,
@@ -46,6 +52,8 @@ const noteSchema = new mongoose.Schema({
     },
   });
 
+
+//schema  of the user collection
   const userSchema = new mongoose.Schema({
     name: {
       type: String,
@@ -73,42 +81,57 @@ const noteSchema = new mongoose.Schema({
 //For enabling full text search
 noteSchema.index({ title: 'text', content: 'text' });
 
+//Creation of the models
 const User=new mongoose.model('User',userSchema);
-
 const Note=new mongoose.model('Note',noteSchema);
 
-
+// Route for rendering the signup page
 app.get("/",function(req,res){
     res.render("signup");
 });
 
 
-app.post("/signup",function(req,res){
-    const newUser=new User({
-        name:req.body.name,
-        email:req.body.email,
-        password:req.body.password
-    })
-    newUser.save()
-    .then(function(){
-        res.render("home",{notes:notes,searchQuery:"",isSearch:false});
-    })
-    .catch(function(err){
-        console.log(err);
-    })
+// Route to handle user signup
+app.post("/signup", function(req, res) {
+  // Create a new user instance from the form data
+  const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password
+  });
+
+  // Save the new user to the database
+  newUser.save()
+      .then(function() {
+          // After saving the user, fetch all notes and render the home page
+          Note.find({})
+              .then((notes) => {
+                  res.render("home", { notes: notes, searchQuery: "", isSearch: false });
+              })
+              .catch((err) => {
+                  console.log(err);
+                  res.render("home", { notes: [], searchQuery: "", isSearch: false });  // Handle error and render empty notes
+              });
+      })
+      .catch(function(err) {
+          console.log(err);
+      });
 });
 
+// Route to render the login page
 app.get("/login",function(req,res){
     res.render("login");
 });
 
+// Route to handle user login
 app.post("/login",function(req,res){
+    // Find a user by name and password
     User.findOne({name:req.body.name,password:req.body.password}).
     then((foundUser)=>{
         if(!foundUser){
-            res.render("failure");
+            res.render("failure");// Render failure page if user not found
         }else{
-            res.redirect("home");
+            res.redirect("home");// Redirect to home page if login is successful
         }
     })
     .catch((err)=>{
@@ -116,36 +139,44 @@ app.post("/login",function(req,res){
     })
 });
 
-
+// Route to handle failure and redirect to the signup page
 app.post("/failure",function(req,res){
     res.redirect("/");
 });
 
-
+// Route to render the home page with all notes
 app.get("/home",function(req,res){
+   // Fetch all notes from the database
     Note.find({})
     .then((notes)=>{
         res.render("home",{notes:notes,searchQuery:"",isSearch:false});
     })
 });
 
+// Route to handle note creation
 app.post("/home",function(req,res){
+  // Create a new note from the form data
     const newNote=new Note({
         title:req.body.title,
         content:req.body.content,
         tags:req.body.tags,
     });
+    // Save the new note to the database
     newNote.save()
     .then(function(){
-        res.redirect("home");
+        res.redirect("home");// Redirect to home page after saving the note
     })
+    .catch(function(err){
+        console.log(err);
+    });
 });
 
-
+// Route to render the create note page
 app.get("/create",function(req,res){
     res.render("create",{searchQuery:""});
 })
 
+// Route to display a specific note based on the title
 app.get("/:postName",function(req,res){
     const requestedTitle=req.params.postName;
     Note.findOne({title:requestedTitle})
@@ -157,6 +188,7 @@ app.get("/:postName",function(req,res){
     })
 });
 
+// Route for handling search requests
 app.post('/search', function (req, res) {
     const query = req.body.search || "";
   
@@ -202,12 +234,12 @@ app.post('/search', function (req, res) {
     }
   });
   
-
+// Route to delete a specific note
 app.post("/delete/:noteID",function(req,res){
     const noteID=req.params.noteID;
     Note.findByIdAndDelete(noteID)
     .then(()=>{
-        res.redirect("/home");
+        res.redirect("/home");// Redirect to home page after deleting the note
     })
     .catch((err)=>{
         console.log(err);
@@ -215,12 +247,13 @@ app.post("/delete/:noteID",function(req,res){
     })
 })
 
+// Route to render the edit note page
 app.get("/edit/:noteId",function(req,res){
     const noteId=req.params.noteId;
     Note.findById(noteId)
     .then((note)=>{
         if(!note){
-            res.redirect("/home");
+            res.redirect("/home");// Redirect if the note doesn't exist
         }else{
         res.render("edit",{note:note,searchQuery:""});
         }
@@ -230,6 +263,7 @@ app.get("/edit/:noteId",function(req,res){
      })
 })
 
+// Route to handle note edits
 app.post("/edit/:noteID", (req, res) => {
     const noteID = req.params.noteID;
 
@@ -252,8 +286,8 @@ app.post("/edit/:noteID", (req, res) => {
         });
 });
 
-
-app.listen(3000, function(){
+// Start the server 
+app.listen(process.env.PORT || 3000, function(){
     console.log("Server started on port 3000");
 });
 
