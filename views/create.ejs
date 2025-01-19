@@ -1,0 +1,58 @@
+<%- include("partials/header") -%>
+
+<div class="container">
+  <div class="form-signin">
+    <h2>Create Note</h2>
+
+    <form action="/home" method="post">
+      <div class="form-floating mb-3">
+        <label for="floatingTitle">Title</label>
+        <input
+          style="margin-bottom: 20px"
+          type="text"
+          name="title"
+          class="form-control"
+          id="floatingTitle"
+          placeholder="Title"
+          autocomplete="off"
+          required
+        />
+      </div>
+
+      <div class="form-floating mb-3">
+        
+        <label for="floatingContent">Content</label>
+        <textarea
+          rows="8"
+          columns="50"  
+          style="margin-bottom: 20px"
+          name="content"
+          class="form-control"
+          id="floatingContent"
+          placeholder="Content"
+          autocomplete="off"
+          required
+          style="height: 200px"
+        ></textarea>
+      </div>
+
+      <div class="form-floating mb-3">
+        
+        <label for="floatingTags">Tags</label>
+        <input
+          style="margin-bottom: 20px"
+          type="text"
+          name="tags"
+          class="form-control"
+          id="floatingTags"
+          placeholder="Tags"
+          autocomplete="off"
+        />
+      </div>
+
+      <button class="btn btn-primary w-100 py-2" type="submit">
+        Create Note
+      </button>
+    </form>
+  </div>
+</div>
